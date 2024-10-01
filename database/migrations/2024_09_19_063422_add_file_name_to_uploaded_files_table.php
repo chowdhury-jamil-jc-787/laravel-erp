@@ -14,6 +14,8 @@ return new class extends Migration
         Schema::table('uploaded_files', function (Blueprint $table) {
             // Add the file_name column
             $table->string('file_name')->after('salesperson_code');  // Assuming you want to store it after salesperson_code
+
+            $table->foreign('salesperson_code')->references('salesperson_code')->on('users')->onDelete('cascade');
         });
     }
 

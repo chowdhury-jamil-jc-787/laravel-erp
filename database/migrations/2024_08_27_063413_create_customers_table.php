@@ -22,7 +22,6 @@ return new class extends Migration
             $table->string('post_code');
             $table->string('county')->nullable();
             $table->string('abn');
-            $table->string('salesperson_code');
             $table->string('country_region_code');
             $table->string('location_code');
             $table->string('phone_no');

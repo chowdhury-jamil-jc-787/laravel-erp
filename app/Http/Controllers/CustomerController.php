@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Customer;
+use Illuminate\Support\Facades\Schema;
 
 class CustomerController extends Controller
 {
@@ -13,7 +14,25 @@ class CustomerController extends Controller
     public function index(Request $request)
     {
         $perPage = $request->get('per_page', 10);
-        $customers = Customer::paginate($perPage);
+    
+        // Start a query on the Customer model
+        $query = Customer::query();
+    
+        // Iterate over all query parameters and apply them as filters if they match a column in the 'customers' table
+        foreach ($request->all() as $key => $value) {
+            // Ensure we are not applying pagination parameters as filters
+            if (in_array($key, ['page', 'per_page'])) {
+                continue;
+            }
+    
+            // Apply search to all columns dynamically
+            if (Schema::hasColumn('customers', $key)) {
+                $query->where($key, 'LIKE', '%' . $value . '%');
+            }
+        }
+    
+        // Paginate the filtered results
+        $customers = $query->paginate($perPage);
     
         $response = [
             'message' => 'Customers retrieved successfully',
@@ -23,11 +42,12 @@ class CustomerController extends Controller
             'per_page' => $customers->perPage(),
             'next_page_url' => $customers->nextPageUrl(),
             'prev_page_url' => $customers->previousPageUrl(),
-            'data' => $customers->items()
+            'results' => $customers->items()
         ];
     
         return response()->json($response, 200);
     }
+    
 
     /**
      * Store a newly created resource in storage.
@@ -186,6 +206,34 @@ class CustomerController extends Controller
         return response()->json([
             'message' => 'Customer deleted successfully'
         ], 200);
+    }
+
+    public function search(Request $request)
+    {
+        // Validate the request to ensure 'name' is provided
+        $request->validate([
+            'name' => 'required|string',
+        ]);
+
+        // Get the search term from the request
+        $searchTerm = $request->input('name');
+
+        // Perform a search on the 'name' column in the customers table
+        $customers = Customer::where('name', 'LIKE', '%' . $searchTerm . '%')->pluck('name');
+
+        // Check if there are any matches
+        if ($customers->isEmpty()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'No matches found',
+            ], 404);
+        }
+
+        // Return only the names of the matched customers
+        return response()->json([
+            'status' => 'success',
+            'data' => $customers
+        ]);
     }
     
 }

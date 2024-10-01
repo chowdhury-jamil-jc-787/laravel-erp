@@ -10,4 +10,10 @@ class Customer extends Model
     use HasFactory;
 
     protected $guarded = [];
+
+    // Relationship to the QuotationTracker
+    public function quotationTrackers()
+    {
+        return $this->hasMany(QuotationTracker::class);
+    }
 }
